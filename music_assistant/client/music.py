@@ -6,17 +6,11 @@ import urllib.parse
 from typing import TYPE_CHECKING
 
 from music_assistant.common.models.enums import MediaType
-from music_assistant.common.models.media_items import (
-    Album,
-    Artist,
-    MediaItemType,
-    PagedItems,
-    Playlist,
-    Radio,
-    SearchResults,
-    Track,
-    media_from_dict,
-)
+from music_assistant.common.models.media_items import (Album, Artist,
+                                                       MediaItemType,
+                                                       PagedItems, Playlist,
+                                                       Radio, SearchResults,
+                                                       Track, media_from_dict)
 from music_assistant.common.models.provider import SyncTask
 
 if TYPE_CHECKING:
@@ -471,6 +465,7 @@ class Music:
         search_query: str,
         media_types: tuple[MediaType] = MediaType.ALL,
         limit: int = 25,
+        provider_instance_ids: tuple[str] = None
     ) -> SearchResults:
         """Perform global search for media items on all providers."""
         return SearchResults.from_dict(
@@ -479,6 +474,7 @@ class Music:
                 search_query=search_query,
                 media_types=media_types,
                 limit=limit,
+                provider_instance_ids=provider_instance_ids
             ),
         )
 

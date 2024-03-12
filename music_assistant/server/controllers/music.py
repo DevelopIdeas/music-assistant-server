@@ -14,31 +14,25 @@ from typing import TYPE_CHECKING
 from music_assistant.common.helpers.datetime import utc_timestamp
 from music_assistant.common.helpers.json import json_dumps, json_loads
 from music_assistant.common.helpers.uri import parse_uri
-from music_assistant.common.models.config_entries import ConfigEntry, ConfigValueType
-from music_assistant.common.models.enums import (
-    ConfigEntryType,
-    EventType,
-    ExternalID,
-    MediaType,
-    ProviderFeature,
-    ProviderType,
-)
-from music_assistant.common.models.errors import MediaNotFoundError, MusicAssistantError
-from music_assistant.common.models.media_items import BrowseFolder, MediaItemType, SearchResults
+from music_assistant.common.models.config_entries import (ConfigEntry,
+                                                          ConfigValueType)
+from music_assistant.common.models.enums import (ConfigEntryType, EventType,
+                                                 ExternalID, MediaType,
+                                                 ProviderFeature, ProviderType)
+from music_assistant.common.models.errors import (MediaNotFoundError,
+                                                  MusicAssistantError)
+from music_assistant.common.models.media_items import (BrowseFolder,
+                                                       MediaItemType,
+                                                       SearchResults)
 from music_assistant.common.models.provider import SyncTask
-from music_assistant.constants import (
-    DB_SCHEMA_VERSION,
-    DB_TABLE_ALBUM_TRACKS,
-    DB_TABLE_ALBUMS,
-    DB_TABLE_ARTISTS,
-    DB_TABLE_PLAYLISTS,
-    DB_TABLE_PLAYLOG,
-    DB_TABLE_PROVIDER_MAPPINGS,
-    DB_TABLE_RADIOS,
-    DB_TABLE_SETTINGS,
-    DB_TABLE_TRACK_LOUDNESS,
-    DB_TABLE_TRACKS,
-)
+from music_assistant.constants import (DB_SCHEMA_VERSION,
+                                       DB_TABLE_ALBUM_TRACKS, DB_TABLE_ALBUMS,
+                                       DB_TABLE_ARTISTS, DB_TABLE_PLAYLISTS,
+                                       DB_TABLE_PLAYLOG,
+                                       DB_TABLE_PROVIDER_MAPPINGS,
+                                       DB_TABLE_RADIOS, DB_TABLE_SETTINGS,
+                                       DB_TABLE_TRACK_LOUDNESS,
+                                       DB_TABLE_TRACKS)
 from music_assistant.server.helpers.api import api_command
 from music_assistant.server.helpers.database import DatabaseConnection
 from music_assistant.server.models.core_controller import CoreController
@@ -152,13 +146,19 @@ class MusicController(CoreController):
         search_query: str,
         media_types: list[MediaType] = MediaType.ALL,
         limit: int = 50,
+        provider_instance_ids: tuple[str] = None
     ) -> SearchResults:
         """Perform global search for media items on all providers.
 
         :param search_query: Search query.
         :param media_types: A list of media_types to include.
         :param limit: number of items to return in the search (per type).
+        :param provider_instance_ids: specific providers to restrict search results
         """
+        if provider_instance_ids is not None and len(provider_instance_ids) > 0:
+            providers = [p.instance_id for p in self.providers if p.instance_id in provider_instance_ids]
+        else:
+            providers = self.get_unique_providers()
         # include results from all (unique) music providers
         results_per_provider: list[SearchResults] = await asyncio.gather(
             *[
@@ -168,7 +168,7 @@ class MusicController(CoreController):
                     media_types,
                     limit=limit,
                 )
-                for provider_instance in self.get_unique_providers()
+                for provider_instance in providers
             ]
         )
         # return result from all providers while keeping index
